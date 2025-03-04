@@ -6,9 +6,6 @@ from chemprop import data, featurizers, models, nn
 import numpy as np
 
 
-
-
-
 class LRP_rules:
     def __init__(self):
         pass
@@ -170,7 +167,7 @@ class LRP_explainer(LRP_rules):
 
 
 
-    def explain(self):
+    def explain_all(self):
         """
         Performs the LRP analysis.
         """
@@ -277,13 +274,13 @@ class LRP_explainer(LRP_rules):
                                                     weights_matrix=model_params_cache['W_i'],
                                                     alpha=alpha)
         relevance_starting_atom = relevances_cache['bmg'][:, :model_params_cache['d_V']]
-        relevance_bond = relevances_cache['bmg'][:, model_params_cache['d_V']:]
+        self.relevance_bond = relevances_cache['bmg'][:, model_params_cache['d_V']:]
 
         index_torch = bmg.edge_index[0].unsqueeze(1).repeat(1, bmg.V.shape[1])
         relevance_atom = torch.zeros(len(bmg.V), bmg.V.shape[1], dtype=activations_cache['H_1'].dtype,
                                      device=activations_cache['H_1'].device). \
             scatter_reduce_(0, index_torch, relevance_starting_atom, reduce='sum', include_self=False)
-        relevance_atom = relevance_atom + relevance_mp_accummulate
+        self.relevance_atom = relevance_atom + relevance_mp_accummulate
 
         # relevance_atom_sum
         relevances_H_0 = relevances_cache['H_0_all']
@@ -297,4 +294,12 @@ class LRP_explainer(LRP_rules):
 
         relevance_atom_sum = relevances_H_0_all + relevance_accumulate_all
 
-        return relevance_atom, relevance_bond, relevance_atom_sum
+        return relevance_atom_sum
+    
+    def explain_atom(self):
+        pass
+        return self.relevance_atom
+    
+    def explain_bond(self):
+        pass
+        return self.relevance_bond
