@@ -4,60 +4,14 @@ from pathlib import Path
 from lightning import pytorch as pl
 from chemprop import data, featurizers, models, nn
 import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error,root_mean_squared_error
-from rdkit import Chem
-from chemprop.featurizers.molecule import (
-    MorganBinaryFeaturizer,
-    MorganCountFeaturizer
-)
-from chemprop.nn.metrics import ChempropMetric,MSE,MAE,RMSE, R2Score
-import seaborn as sns
-from lightning.pytorch.callbacks import ModelCheckpoint
-from rdkit import Chem
-from rdkit.Chem import Draw
-from rdkit.Chem import rdDepictor
-from rdkit.Chem.Draw import rdMolDraw2D
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-from matplotlib import cm
-from matplotlib.lines import Line2D
-from rdkit.Chem import AllChem, rdmolops
-import json
-from IPython.display import display
-from skopt import gp_minimize, forest_minimize, gbrt_minimize
-from skopt.space import Real
-import random
-import sys
-import os
 
-class LRP_explainer:
-    """
-    A class for performing Layer-wise Relevance Propagation (LRP).
-    """
 
-    def __init__(self, model, model_params_cache, activations_cache, bmg, gamma=1.0, epsilon=0, alpha=1.0):
-        """
-        Initializes the LRP object.
 
-        Args:
-            model: The PyTorch model.
-            model_params_cache (dict): Cached model parameters (weights, biases).
-            activations_cache (dict): Cached activations from forward pass.
-            bmg:  Batch Molecular Graph data structure (assumed to contain graph connectivity info).
-            device: torch.device (e.g., 'cuda' or 'cpu')
-            gamma (float): Gamma parameter for certain LRP rules.
-            epsilon (float): Epsilon parameter for certain LRP rules (stabilizer).
-            alpha (float): Alpha parameter for certain LRP rules.
-        """
-        self.model = model
-        self.model_params_cache = model_params_cache
-        self.activations_cache = activations_cache
-        self.bmg = bmg
-        self.gamma = gamma
-        self.epsilon = epsilon
-        self.alpha = alpha
-        self.relevances_cache = {}  # Store relevances
+
+
+class LRP_rules:
+    def __init__(self):
+        pass
 
     def positive_matmul(self, A, B):
         """
@@ -184,6 +138,37 @@ class LRP_explainer:
         reverse_index = torch.argsort(index)
         original_tensor = derivative_tensor[reverse_index]
         return original_tensor
+
+class LRP_explainer(LRP_rules):
+    """
+    A class for performing Layer-wise Relevance Propagation (LRP).
+    """
+
+    def __init__(self, model, model_params_cache, activations_cache, bmg, gamma=1.0, epsilon=0, alpha=1.0):
+        """
+        Initializes the LRP object.
+
+        Args:
+            model: The PyTorch model.
+            model_params_cache (dict): Cached model parameters (weights, biases).
+            activations_cache (dict): Cached activations from forward pass.
+            bmg:  Batch Molecular Graph data structure (assumed to contain graph connectivity info).
+            device: torch.device (e.g., 'cuda' or 'cpu')
+            gamma (float): Gamma parameter for certain LRP rules.
+            epsilon (float): Epsilon parameter for certain LRP rules (stabilizer).
+            alpha (float): Alpha parameter for certain LRP rules.
+        """
+        super().__init__()
+        self.model = model
+        self.model_params_cache = model_params_cache
+        self.activations_cache = activations_cache
+        self.bmg = bmg
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.alpha = alpha
+        self.relevances_cache = {}  # Store relevances
+
+
 
     def explain(self):
         """
