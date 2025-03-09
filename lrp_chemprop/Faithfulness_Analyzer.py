@@ -3,10 +3,10 @@ import numpy as np
 import torch
 from sklearn.metrics import root_mean_squared_error, mean_absolute_error, r2_score
 from chemprop import data
-from lrp_chemprop.Data_Preprocessor import Data_Preprocessor
+from Data_Preprocessor import Data_Preprocessor
 import copy
-from lrp_chemprop.LRP_Explainer import LRP_Explainer
-from lrp_chemprop.Model_Extractor import Model_Extractor
+from LRP_Explainer import LRP_Explainer
+from Model_Extractor import Model_Extractor
 
 class Faithfulness_Analyzer(Data_Preprocessor):
     def __init__(self,model,
@@ -208,12 +208,18 @@ class Faithfulness_Analyzer(Data_Preprocessor):
         return rmse
 
     
-    def forward(self,alpha_1,epsilon,alpha_2,seed=0):
+    def analyzer(self,alpha_1,epsilon,alpha_2,seed=0):
         rmse_random = self.random_control(seed=seed)
         rmse_manual = self.rmse_manual
         rmse_lrp = self.lrp_drop(alpha_1=alpha_1,epsilon=epsilon,alpha_2=alpha_2)
 
         return rmse_manual, rmse_lrp, rmse_random
+    
+    def faithfulness(self,alpha_1,epsilon,alpha_2,seed=0):
+        rmse_manual, rmse_lrp, rmse_random = self.analyzer(alpha_1,epsilon,alpha_2,seed=seed)
+
+        faithfulness = (np.trapezoid(y=rmse_lrp,x=range(0,self.num_drop))-np.trapezoid(y=rmse_random,x=range(0,self.num_drop)))/(np.trapezoid(y=rmse_manual,x=range(0,self.num_drop))-np.trapezoid(y=rmse_random,x=range(0,self.num_drop)))
+        return faithfulness
 
 
 
