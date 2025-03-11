@@ -33,6 +33,7 @@ class Data_Preprocessor:
         n_hydrogens = atom.GetTotalNumHs()
         return n_hydrogens > 0
 
+    
     def is_hba(self,atom):
         '''Check if an atom is a Hydrogen Bond Acceptor (HBA). An atom is considered an HBA if it's N or O with a lone pair electron
         
