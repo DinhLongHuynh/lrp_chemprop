@@ -16,7 +16,6 @@ class Faithfulness_Analyzer(Data_Preprocessor):
         data_frame (PandasDataFrame): a data frame that contains SMILES code of compounds.
         smiles_column (str): a string that indicates the SMILES column in the data frame.
         target_column (str): a string that indicates the target column (i.e. docking_scores, solubility) in the data frame.
-        smiles_column (str): a string that indicates the SMILES column in the data frame.
         addH (boolean): to incorporate explicit hydrogen atoms into a molecular graph.
         HB (boolean): to incorporate additional HBD/HBA features for each atom in BatchMolGraph.
         num_drop (int): number of atom dropping rounds.
