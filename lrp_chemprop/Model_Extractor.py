@@ -11,6 +11,15 @@ from rdkit.Chem import AllChem
 
 
 class Model_Extractor:
+    '''
+    A class to extract parameters and activations from model
+
+    Parameters:
+    ----------
+    model (Chemprop model): a chemprop model checkpoint (.ckpt)
+    data_loader (Chemprop dataloader): a chemprop data loader, which can be prepared using 'Data_Prepocessor'.
+    '''
+    
     def __init__(self, model, data_loader):
         self.model = model
         self.data_loader = data_loader
@@ -23,7 +32,10 @@ class Model_Extractor:
         bmg, V_d, X_d, Y, *_ = batch
         self.bmg = self.model.message_passing.graph_transform(bmg)
 
+    
     def extract_params(self):
+        ''' To extract model parameters.'''
+        
         self.params_cache['W_i'] = self.model.message_passing.W_i.weight
         self.params_cache['W_h'] = self.model.message_passing.W_h.weight
         self.params_cache['W_o'] = self.model.message_passing.W_o.weight
@@ -44,7 +56,10 @@ class Model_Extractor:
         self.params_cache['output_transform_scale'] = self.model.predictor.output_transform.scale
         self.params_cache['depth'] = self.model.message_passing.depth
 
+    
     def extract_activations(self):
+        ''' To extract model activations at different layers'''
+        
         batch = next(iter(self.data_loader))
         bmg, V_d, X_d, Y, *_ = batch
         bmg = self.model.message_passing.graph_transform(bmg)
