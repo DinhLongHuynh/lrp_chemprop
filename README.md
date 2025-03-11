@@ -8,4 +8,4 @@ Hello, this repository showcases the work for my Master's Thesis. The project's 
 </p>
 
 ## Tutorials
-To dicover how to use lrp_chemprop module to analyse explainability of chemprop model, please check: https://github.com/DinhLongHuynh/lrp_chemprop/blob/main/examples/LRP_analysis.ipynb
+To dicover how to use lrp_chemprop module for analysing explainability of chemprop model, please check: https://github.com/DinhLongHuynh/lrp_chemprop/blob/main/examples/LRP_analysis.ipynb
