@@ -9,19 +9,18 @@ from LRP_Explainer import LRP_Explainer
 from Model_Extractor import Model_Extractor
 
 class Faithfulness_Analyzer(Data_Preprocessor):
-    '''A class to perform faithfulness analysis and compute faithfulness score
+     '''A class to perform faithfulness analysis and compute faithfulness score
     
         Parameters:
         ----------
         data_frame (PandasDataFrame): a data frame that contains SMILES code of compounds.
-        smiles_column (str): string that indicates SMILES column in the data frame.
-        target_column (str): string that indicates target column (i.e. docking_scores, solubility) in the data frame.
-        smiles_column (str): string that indicates SMILES column in the data frame.
-        addH (boolean): to incoporate explixit hydrogen atom into molecular graph.
-        HB (boolean): to incoporate additional HBD/HBA features for each atom in BatchMolGraph.
+        smiles_column (str): a string that indicates the SMILES column in the data frame.
+        target_column (str): a string that indicates the target column (i.e. docking_scores, solubility) in the data frame.
+        smiles_column (str): a string that indicates the SMILES column in the data frame.
+        addH (boolean): to incorporate explicit hydrogen atoms into a molecular graph.
+        HB (boolean): to incorporate additional HBD/HBA features for each atom in BatchMolGraph.
         num_drop (int): number of atom dropping rounds.
         model (Chemprop model): Chemprop model.
-        
         '''
     
     def __init__(self,model,
@@ -50,12 +49,11 @@ class Faithfulness_Analyzer(Data_Preprocessor):
 
 
     def manual_control(self):
-        '''Perform manual drop each atom in each molecule to find the one that most influence the prediction
+        '''Perform manual drop of each atom in each molecule to find the one that most influences the prediction
         
         Returns:
         ----------
-        rmse (numpy array): an array of rmse compare to inital prediction at each drop round.
-        
+        rmse (numpy array): an array of rmse compared to the inital prediction at each drop round.
         '''
         
         self.num_compound = self.data_frame.shape[0]
@@ -125,8 +123,7 @@ class Faithfulness_Analyzer(Data_Preprocessor):
         ----------
         selected_values (torch Tensor): a 1D Tensor with length of num_drop*num_compounds
         
-        When ever take a slice of selected_values[:num_drop*n], there are always n atoms from each compound.
-        
+        Whenever take a slice of selected_values[:num_drop*n], there are always n atoms from each compound in the slice.
         '''
         
         tensor = torch.arange(self.bmg.V.shape[0])
@@ -168,8 +165,7 @@ class Faithfulness_Analyzer(Data_Preprocessor):
         
         Returns:
         ----------
-        rmse (numpy array): an array of rmse compare to inital prediction at each drop round.
-
+        rmse (numpy array): an array of rmse compared to the initial prediction at each drop round.
         '''
         
         rmse = [0]
@@ -210,8 +206,7 @@ class Faithfulness_Analyzer(Data_Preprocessor):
         
         Returns:
         ----------
-        rmse (numpy array): an array of rmse compare to inital prediction at each drop round.
-
+        rmse (numpy array): an array of rmse compared to the inital prediction at each drop round.
         '''
         
         extractor = Model_Extractor(self.model,self.loader)
@@ -279,10 +274,9 @@ class Faithfulness_Analyzer(Data_Preprocessor):
         
         Returns:
         ----------
-        rmse_manual (numpy array): an array of rmse compare to inital prediction at each manual drop round.
-        rmse_lrp (numpy array): an array of rmse compare to inital prediction at each lrp drop round.
-        rmse_random (numpy array): an array of rmse compare to inital prediction at each random drop round.
-
+        rmse_manual (numpy array): an array of rmse compared to the initial prediction at each manual drop round.
+        rmse_lrp (numpy array): an array of rmse compared to the initial prediction at each lrp drop round.
+        rmse_random (numpy array): an array of rmse compared to the initial prediction at each random drop round.
         '''
         
         rmse_random = self.random_control(seed=seed)
@@ -304,7 +298,6 @@ class Faithfulness_Analyzer(Data_Preprocessor):
         Returns:
         ----------
         faithfulness (float): faithfulness score
-
         '''
         
         rmse_manual, rmse_lrp, rmse_random = self.analyzer(alpha_1,epsilon,alpha_2,seed=seed)
