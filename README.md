@@ -6,3 +6,6 @@ Hello, this repository showcases the work for my Master's Thesis. The project's 
 <p align="center">
   <img src="images/project_cover.png" alt="Alt text" width="700">
 </p>
+
+## Tutorials
+To dicover how to use lrp_chemprop module to analyse explainability of chemprop model, please check: https://github.com/DinhLongHuynh/lrp_chemprop/blob/main/examples/LRP_analysis.ipynb
