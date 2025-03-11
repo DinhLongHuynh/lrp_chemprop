@@ -2,15 +2,23 @@ import torch
 
 
 class LRP_Rules:
-    '''A class that contains all LRP_rules for different kind of layers'''
+    '''A class that contains all LRP_rules for different kind of layers.'''
     
     def __init__(self):
         pass
 
+    
     def positive_matmul(self, A, B):
-        """
-        Performs matrix multiplication with positive pairs only.
-        """
+        ''' Perform matrix multiplication with positive pairs only.
+        Parameters: 
+        ---------
+        A, B (torch Tensor).
+
+        Returns:
+        ---------
+        tensor (torch Tensor).
+        '''
+        
         A_plus = torch.clamp(A, min=0)
         B_plus = torch.clamp(B, min=0)
         A_minus = torch.clamp(A, max=0)
@@ -18,10 +26,18 @@ class LRP_Rules:
 
         return torch.matmul(A_plus, B_plus) + torch.matmul(A_minus, B_minus)
 
+    
     def negative_matmul(self, A, B):
-        """
-        Performs matrix multiplication with negative pairs only.
-        """
+        ''' Perform matrix multiplication with negative pairs only.
+        Parameters: 
+        ---------
+        A, B (torch Tensor).
+
+        Returns:
+        ---------
+        tensor (torch Tensor).
+        '''
+        
         A_plus = torch.clamp(A, min=0)
         B_plus = torch.clamp(B, min=0)
         A_minus = torch.clamp(A, max=0)
@@ -29,10 +45,22 @@ class LRP_Rules:
 
         return torch.matmul(A_plus, B_minus) + torch.matmul(A_minus, B_plus)
 
+    
     def lrp_dense_epsilon(self, activation_j, relevance_k, weights_matrix, bias_matrix=None, epsilon=0):
-        """
-        LRP for dense layers with LRP-epsilon rule
-        """
+        '''LRP-epsilon rule for dense layers.
+        
+        Parameters: 
+        ---------
+        activation_j (torch Tensor): a 2D tensor that contains activations from the previous layer, the shape of (num_object x d_j).
+        relevance_k (torch Tensor): a 2D tensor that contains relevance scores from recent layer, the shape of (num_object x d_k).
+        weight_matrix (torch Tensor): a 2D tensor that contains weight values connecting layer J and layer K, the shape of (d_k, d_j).
+        bias_matrix (torch Tensor): a 1D tensor that contains bias values connecting layer J and layer K, length of d_k.
+        epsilon (float): parameters of LRP_Explainer.
+
+        Returns:
+        ---------
+        relevance_j (torch Tensor): a 2D tensor that contains relevance scores from the previous layer, the shape of (num_object x d_j).
+        '''
 
         if bias_matrix is not None:
             zk = torch.matmul(activation_j, weights_matrix.T) + bias_matrix
@@ -46,10 +74,21 @@ class LRP_Rules:
 
         return relevance_j
 
+    
     def lrp_dense_ab(self, activation_j, relevance_k, weights_matrix, alpha=1.0):
-        """
-        LRP for dense layers with LRP_alpha-beta rule.
-        """
+        '''LRP-ab rule for dense layers.
+        
+        Parameters: 
+        ---------
+        activation_j (torch Tensor): a 2D tensor that contains activations from the previous layer, the shape of (num_object x d_j).
+        relevance_k (torch Tensor): a 2D tensor that contains relevance scores from recent layer, the shape of (num_object x d_k).
+        weight_matrix (torch Tensor): a 2D tensor that contains weight values connecting layer J and layer K, the shape of (d_k, d_j).
+        alpha (float): parameters of LRP_Explainer.
+
+        Returns:
+        ---------
+        relevance_j (torch Tensor): a 2D tensor that contains relevance scores from the previous layer, the shape of (num_object x d_j)
+        '''
 
         beta = alpha - 1
 
@@ -74,10 +113,22 @@ class LRP_Rules:
 
         return alpha * relevance_plus - beta * relevance_minus
 
+    
     def lrp_aggregation_epsilon(self, activation_j, relevance_k, batch_index, epsilon=0, agg_func='sum'):
-        """
-        LRP for aggregation layers with LRP_epsilon rule.
-        """
+        '''LRP-epsilon rule for aggregation layers.
+        
+        Parameters: 
+        ---------
+        activation_j (torch Tensor): a 2D tensor that contains activations from the previous layer, the shape of (num_object_j x d).
+        relevance_k (torch Tensor): a 2D tensor that contains relevance scores from a recent layer, the shape of (num_object_k x d).
+        batch_index (torch Tensor): a 1D tensor that indicates which object_j should be aggregated to derived onject_k, length of (num_object_j).
+        epsilon (float): parameters of LRP_Explainer.
+        agg_func (str): a string that indicates which aggregation function has been used between layers J and K, 'sum' or 'mean'.
+
+        Returns:
+        ---------
+        relevance_j (torch Tensor): a 2D tensor that contains relevance scores from the previous layer, the shape of (num_object_j x d_j).
+        '''
 
         num_compounds = batch_index.max().item() + 1
         num_atoms, d_h = activation_j.shape
@@ -116,17 +167,46 @@ class LRP_Rules:
 
         return relevance_j
 
+    
     def relevance_split(self,relevance,tensor_1,tensor_2):
+        '''Perform ration splitting for skip connection layers.
+        
+        Parameters: 
+        ---------
+        relevance (torch Tensor): a 2D tensor that contains relevance scores from a recent layer, the shape of (num_object x d).
+        tensor_1, tensor_2 (torch Tensor): 2D tensors that contain activations, which are summed up in the skip_connection layers, the shape of (num_object x d).
+
+        Returns:
+        ---------
+        relevance_1, relevance_2 (torch Tensor): 2D tensors that contain relevance scores from the previous layer after splitting from 'relevance', the shape of (num_object x d).
+        '''
+        
         s = tensor_1.abs() + tensor_2.abs() 
         safe_s = torch.where(s==0, torch.tensor(1e-20, device=s.device),s)
         relevance_1 = relevance*(tensor_1.abs()/safe_s)
         relevance_2 = relevance*(tensor_2.abs()/safe_s)
         return relevance_1, relevance_2
 
+    
     def reverse_sort(self,derivative_tensor, index):
+        '''Return initial tensor after sorted by a certain 'index' order.
+        
+        Parameters: 
+        ---------
+        derivative_tensor (torch Tensor): a tensor after sorted by 'index'.
+        index (torch Tensor): a tensor that contains order to sort 'original_tensor' into 'derivative_tensor'.
+
+        Returns:
+        ---------
+        original_tensor (torch Tensor)
+        '''
+        
         reverse_index = torch.argsort(index)
         original_tensor = derivative_tensor[reverse_index]
         return original_tensor
+
+
+
 
 class LRP_Explainer(LRP_Rules):
     """
@@ -155,7 +235,6 @@ class LRP_Explainer(LRP_Rules):
         self.epsilon = epsilon
         self.alpha = alpha
         self.relevances_cache = {}  # Store temporatily relevances
-
 
 
     def explain_all(self):
@@ -286,10 +365,12 @@ class LRP_Explainer(LRP_Rules):
         relevance_atom_sum = relevances_H_0_all + relevance_accumulate_all
 
         return relevance_atom_sum
+
     
     def explain_atom(self):
         pass
         return self.relevance_atom
+
     
     def explain_bond(self):
         pass
