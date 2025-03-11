@@ -51,15 +51,15 @@ class LRP_Rules:
         
         Parameters: 
         ---------
-        activation_j (torch Tensor): a 2D tensor that contains activations from the previous layer, the shape of (num_object x d_j).
-        relevance_k (torch Tensor): a 2D tensor that contains relevance scores from recent layer, the shape of (num_object x d_k).
+        activation_j (torch Tensor): a 2D tensor that contains activations from the previous layer, the shape of (num_object, d_j).
+        relevance_k (torch Tensor): a 2D tensor that contains relevance scores from recent layer, the shape of (num_object, d_k).
         weight_matrix (torch Tensor): a 2D tensor that contains weight values connecting layer J and layer K, the shape of (d_k, d_j).
-        bias_matrix (torch Tensor): a 1D tensor that contains bias values connecting layer J and layer K, length of d_k.
+        bias_matrix (torch Tensor): a 1D tensor that contains bias values connecting layer J and layer K, length of (d_k).
         epsilon (float): parameters of LRP_Explainer.
 
         Returns:
         ---------
-        relevance_j (torch Tensor): a 2D tensor that contains relevance scores from the previous layer, the shape of (num_object x d_j).
+        relevance_j (torch Tensor): a 2D tensor that contains relevance scores from the previous layer, the shape of (num_object, d_j).
         '''
 
         if bias_matrix is not None:
@@ -80,14 +80,14 @@ class LRP_Rules:
         
         Parameters: 
         ---------
-        activation_j (torch Tensor): a 2D tensor that contains activations from the previous layer, the shape of (num_object x d_j).
-        relevance_k (torch Tensor): a 2D tensor that contains relevance scores from recent layer, the shape of (num_object x d_k).
+        activation_j (torch Tensor): a 2D tensor that contains activations from the previous layer, the shape of (num_object, d_j).
+        relevance_k (torch Tensor): a 2D tensor that contains relevance scores from recent layer, the shape of (num_object, d_k).
         weight_matrix (torch Tensor): a 2D tensor that contains weight values connecting layer J and layer K, the shape of (d_k, d_j).
         alpha (float): parameters of LRP_Explainer.
 
         Returns:
         ---------
-        relevance_j (torch Tensor): a 2D tensor that contains relevance scores from the previous layer, the shape of (num_object x d_j)
+        relevance_j (torch Tensor): a 2D tensor that contains relevance scores from the previous layer, the shape of (num_object, d_j)
         '''
 
         beta = alpha - 1
@@ -119,15 +119,15 @@ class LRP_Rules:
         
         Parameters: 
         ---------
-        activation_j (torch Tensor): a 2D tensor that contains activations from the previous layer, the shape of (num_object_j x d).
-        relevance_k (torch Tensor): a 2D tensor that contains relevance scores from a recent layer, the shape of (num_object_k x d).
+        activation_j (torch Tensor): a 2D tensor that contains activations from the previous layer, the shape of (num_object_j, d).
+        relevance_k (torch Tensor): a 2D tensor that contains relevance scores from a recent layer, the shape of (num_object_k, d).
         batch_index (torch Tensor): a 1D tensor that indicates which object_j should be aggregated to derived onject_k, length of (num_object_j).
         epsilon (float): parameters of LRP_Explainer.
         agg_func (str): a string that indicates which aggregation function has been used between layers J and K, 'sum' or 'mean'.
 
         Returns:
         ---------
-        relevance_j (torch Tensor): a 2D tensor that contains relevance scores from the previous layer, the shape of (num_object_j x d_j).
+        relevance_j (torch Tensor): a 2D tensor that contains relevance scores from the previous layer, the shape of (num_object_j, d_j).
         '''
 
         num_compounds = batch_index.max().item() + 1
@@ -145,11 +145,9 @@ class LRP_Rules:
             atom_counts = torch.sparse.sum(mask, dim=1).to_dense().clamp(min=1)
             weights = mask.to_dense() / atom_counts.unsqueeze(1)
 
-        # Apply gamma rule to weights
-        adj_weights = weights
 
         # Aggregate activations with adjusted weights
-        adj_weights_sparse = mask * adj_weights
+        adj_weights_sparse = mask * weights
         z_k = torch.sparse.mm(adj_weights_sparse, activation_j)  # [num_compounds, d_h]
 
         # Stabilize z_k to avoid division by zero
@@ -173,12 +171,12 @@ class LRP_Rules:
         
         Parameters: 
         ---------
-        relevance (torch Tensor): a 2D tensor that contains relevance scores from a recent layer, the shape of (num_object x d).
-        tensor_1, tensor_2 (torch Tensor): 2D tensors that contain activations, which are summed up in the skip_connection layers, the shape of (num_object x d).
+        relevance (torch Tensor): a 2D tensor that contains relevance scores from a recent layer, the shape of (num_object, d).
+        tensor_1, tensor_2 (torch Tensor): 2D tensors that contain activations, which are summed up in the skip_connection layers, the shape of (num_object, d).
 
         Returns:
         ---------
-        relevance_1, relevance_2 (torch Tensor): 2D tensors that contain relevance scores from the previous layer after splitting from 'relevance', the shape of (num_object x d).
+        relevance_1, relevance_2 (torch Tensor): 2D tensors that contain relevance scores from the previous layer after splitting from 'relevance', the shape of (num_object, d).
         '''
         
         s = tensor_1.abs() + tensor_2.abs() 
@@ -209,45 +207,48 @@ class LRP_Rules:
 
 
 class LRP_Explainer(LRP_Rules):
-    """
-    A class that performing Layer-wise Relevance Propagation (LRP) on Chemprop Architecture.
-    """
+    '''
+    A class that performing Layer-wise Relevance Propagation (LRP) on entire chemprop model.
 
-    def __init__(self, model, model_params_cache, activations_cache, bmg, gamma=1.0, epsilon=0, alpha=1.0):
-        """
-        Initializes the model and LRP object.
+    Parameters:
+    ----------
+    model (Chemprop model): The Chemprop model checkpoint (.ckpt)
+    model_params_cache (dict): Cached model parameters, which can be extract using Model_Extractor.
+    activations_cache (dict): Cached activations from forward pass, which can be extrect using Model_Extractor.
+    bmg (object): Chemprop's Batch Molecular Graph data structure 
+    alpha_1 (float): parameter for LRP_Explainer
+    epsilon (float): parameter for LRP_Explainer
+    alpha_2 (float): parameter for LRP_Explainer
+    '''
 
-        Args:
-            model: The Chemprop model.
-            model_params_cache (dict): Cached model parameters, which can be extract using Model_Extractor
-            activations_cache (dict): Cached activations from forward pass, which can be extrect using Model_Extractor
-            bmg: Chemprop's Batch Molecular Graph data structure 
-            gamma (float): Gamma parameter for LRP-gamma
-            epsilon (float): Epsilon parameter for LRP_epsilon
-            alpha (float): Alpha parameter for LRP_alpha-beta
-        """
+    def __init__(self, model, model_params_cache, activations_cache, bmg, alpha_1=1.0, epsilon=0, alpha_2=1.0):
         super().__init__() # Using all the rules in the parent class LRP_rules
         self.model = model
         self.model_params_cache = model_params_cache
         self.activations_cache = activations_cache
         self.bmg = bmg
-        self.gamma = gamma
+        self.alpha_1 = alpha_1
         self.epsilon = epsilon
-        self.alpha = alpha
+        self.alpha_2 = alpha_2
         self.relevances_cache = {}  # Store temporatily relevances
 
 
     def explain_all(self):
-        """
-        Performs the LRP analysis.
-        """
+        '''
+        Performs the LRP_Explainer for all atoms.
+
+        Returns:
+        ----------
+        relevance_atom_sum (torch Tensor): a 1D tensor that contains relevance scores for each atom in the bmg, the length of (num_atoms).
+        '''
+        
         model = self.model
         model_params_cache = self.model_params_cache
         activations_cache = self.activations_cache
         bmg = self.bmg
         epsilon = self.epsilon
-        gamma = self.gamma
-        alpha = self.alpha
+        alpha_1 = self.alpha_1
+        alpha_2 = self.alpha_2
 
         relevances_cache = self.relevances_cache
         # Predictor
@@ -279,7 +280,7 @@ class LRP_Explainer(LRP_Rules):
             activation_j=activations_cache['mp'],
             relevance_k=relevances_cache['agg'],
             weights_matrix=model_params_cache['W_o'],
-            alpha=gamma
+            alpha=alpha_1
         )
 
         relevance_mp_backprop = relevances_cache['mp'][:, model_params_cache['d_V']:]
@@ -302,7 +303,7 @@ class LRP_Explainer(LRP_Rules):
                 activation_j=activations_cache['M_' + str(i)],
                 relevance_k=relevance_backprop,
                 weights_matrix=model_params_cache['W_h'],
-                alpha=alpha
+                alpha=alpha_2
             )
 
             index_torch = bmg.edge_index[1].unsqueeze(1).repeat(1, model_params_cache['W_h'].shape[1])
@@ -342,7 +343,7 @@ class LRP_Explainer(LRP_Rules):
         relevances_cache['bmg'] = self.lrp_dense_ab(activation_j=activations_cache['bmg'],
                                                     relevance_k=relevances_cache['H_0_all'],
                                                     weights_matrix=model_params_cache['W_i'],
-                                                    alpha=alpha)
+                                                    alpha=alpha_2)
         relevance_starting_atom = relevances_cache['bmg'][:, :model_params_cache['d_V']]
         self.relevance_bond = relevances_cache['bmg'][:, model_params_cache['d_V']:]
 
@@ -368,10 +369,24 @@ class LRP_Explainer(LRP_Rules):
 
     
     def explain_atom(self):
+        '''
+        Performs the LRP_Explainer for each feature in each atom.
+
+        Returns:
+        ----------
+        relevance_atom (torch Tensor): a 2D tensor that contains relevance scores for each feature of each atom in the bmg, the shape of (num_atoms, num_features).
+        '''
         pass
         return self.relevance_atom
 
     
     def explain_bond(self):
+        '''
+        Performs the LRP_Explainer for each feature in each bond.
+
+        Returns:
+        ----------
+        relevance_bond (torch Tensor): a 2D tensor that contains relevance scores for each feature of each bond, the shape of (num_bonds, num_features).
+        '''
         pass
         return self.relevance_bond
