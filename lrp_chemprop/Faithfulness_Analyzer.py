@@ -9,7 +9,7 @@ from LRP_Explainer import LRP_Explainer
 from Model_Extractor import Model_Extractor
 
 class Faithfulness_Analyzer(Data_Preprocessor):
-     '''A class to perform faithfulness analysis and compute faithfulness score
+    '''A class to perform faithfulness analysis and compute faithfulness score
     
         Parameters:
         ----------
@@ -20,7 +20,7 @@ class Faithfulness_Analyzer(Data_Preprocessor):
         HB (boolean): to incorporate additional HBD/HBA features for each atom in BatchMolGraph.
         num_drop (int): number of atom dropping rounds.
         model (Chemprop model): Chemprop model.
-        '''
+     '''
     
     def __init__(self,model,
                  data_frame,smiles_column='smiles',target_column='docking_score',
