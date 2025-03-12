@@ -31,8 +31,6 @@ conda activate lrp_chemprop
 # Install dependencies
 pip install -r requirements.txt
 
-# Install the package in development mode
-pip install -e .
 ```
 
 
