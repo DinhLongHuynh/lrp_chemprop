@@ -6,7 +6,7 @@ from chemprop import data
 from Data_Preprocessor import Data_Preprocessor
 import copy
 from LRP_Explainer import LRP_Explainer
-from Model_Extractor import Model_Extractor
+from Model_Extractor import model_extractor
 
 class Faithfulness_Analyzer(Data_Preprocessor):
     '''A class to perform faithfulness analysis and compute faithfulness score
@@ -208,9 +208,7 @@ class Faithfulness_Analyzer(Data_Preprocessor):
         rmse (numpy array): an array of rmse compared to the inital prediction at each drop round.
         '''
         
-        extractor = Model_Extractor(self.model,self.loader)
-        model_params_cache = extractor.params_cache
-        activations_cache = extractor.activations_cache
+        model_params_cache, activations_cache = model_extractor(self.model,self.loader)
 
         # Run LRP_Explainer
         relevance_atom_sum = LRP_Explainer(model=self.model,
