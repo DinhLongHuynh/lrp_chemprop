@@ -2,5 +2,5 @@ Model's Checkpoints: https://drive.google.com/drive/u/0/folders/1tlf-xCXRXYjwBbO
 Model's Description: 
 
 <p align="center">
-  <img src="../../images/project_cover.png" alt="Alt text" width="700">
+  <img src="../../images/Model_description.png" alt="Alt text" width="700">
 </p>
