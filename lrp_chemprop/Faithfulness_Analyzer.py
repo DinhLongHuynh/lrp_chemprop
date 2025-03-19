@@ -129,23 +129,20 @@ class Faithfulness_Analyzer(Data_Preprocessor):
         index_tensor = self.bmg.batch
         selected_values = torch.tensor([],dtype=torch.int64)
 
-        # Dictionary to store selected atoms for each compound
+        # Initialized containers 
         chosen_per_index = {idx.item(): [] for idx in torch.unique(index_tensor)}
 
         # Perform multiple rounds
         for round_num in range(self.num_drop):
             round_selected = []  
-
             for idx in torch.unique(index_tensor):
-                mask = index_tensor == idx  # Mask to filter atoms by each compound
-                available_values = tensor[mask]  # Get values corresponding to atom
-
-                #Exclude already chosen values
+                mask = index_tensor == idx  
+                available_values = tensor[mask] 
                 remaining_values = available_values[~torch.isin(available_values, torch.tensor(chosen_per_index[idx.item()]))]
 
                 if remaining_values.shape[0] > 0:  # Ensure values are left for selection
                     selected = remaining_values[torch.randperm(len(remaining_values))[0]]  # Select one random value
-                    chosen_per_index[idx.item()].append(selected.item())  # Track selected values
+                    chosen_per_index[idx.item()].append(selected.item())  
                     round_selected.append(selected)
 
             # Concatenate the round selection with previous selections
@@ -177,10 +174,8 @@ class Faithfulness_Analyzer(Data_Preprocessor):
             # Set up random indices to drop
             if self.data_frame.shape[0]*drop_time < self.bmg.V.shape[0]:
                 num_atom_drop = self.data_frame.shape[0]*drop_time
-                #print(num_atom_drop)
             else:
                 num_atom_drop = self.bmg.V.shape[0]
-                #print(num_atom_drop)
             
             # Drop random atom
             random_index  = shuffled_indices[:num_atom_drop]
@@ -234,17 +229,13 @@ class Faithfulness_Analyzer(Data_Preprocessor):
             min_relevances = torch.zeros((self.bmg.batch.max() + 1,)).scatter_reduce(
                 0, self.bmg.batch, relevance_atom_sum, reduce='min', include_self=False
                 )
-            # Initialize a list to store indices of atoms to drop
+
             selected_indices = []
             # Iterate over each molecule in the batch
             for molecule_idx in range(self.bmg.batch.max() + 1):
-                # Get all atom indices belonging to this molecule
                 atom_indices = torch.nonzero(self.bmg.batch == molecule_idx, as_tuple=True)[0]
-                # Filter for atoms with the minimum relevance score
                 candidate_indices = atom_indices[relevance_atom_sum[atom_indices] == min_relevances[molecule_idx]]
-                # Select the first atom from the candidates (or use another criterion like random selection)
                 selected_indices.append(candidate_indices[0])
-            # Store the selected indices for this drop_time
             important_indices[str(drop_time)] = torch.tensor(selected_indices)
 
 
