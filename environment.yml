@@ -1,0 +1,16 @@
+name: lrp_chemprop  # Name of your environment
+channels:
+  - conda-forge  # Additional channels to search for packages
+  - defaults
+dependencies:
+  - chemprop>=2.1.0
+  - python>=3.11
+  - lightning>=2.0
+  - numpy<2.0      
+  - pandas
+  - scikit-learn
+  - rdkit 
+  - scipy
+  - pytorch::pytorch>=2.1
+  
+  
