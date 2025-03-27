@@ -3,7 +3,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-def glide_monitor(job_list, directory = 'glide-dock_SP_', file_name='glide-dock_SP_'):
+def glide_docking_monitor(job_list, directory = 'glide-dock_SP_', file_name='glide-dock_SP_'):
     '''A function to generate data from glide.log
      
     Parameters:
@@ -39,7 +39,7 @@ def glide_monitor(job_list, directory = 'glide-dock_SP_', file_name='glide-dock_
 
     return df
 
-def visualize_glide_monitor(df):
+def visualize_glide_docking_monitor(df):
     plt.figure(figsize=(8, 6))
     sns.barplot(data=df, y='job', x='completed_fraction', color='skyblue', label='Completed')
     sns.barplot(data=df, y='job', x='running_fraction', left=df['completed_fraction'], color ='salmon',label='Running')
