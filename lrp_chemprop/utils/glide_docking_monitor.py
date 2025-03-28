@@ -38,14 +38,15 @@ def glide_docking_monitor(job_list, job_name = 'glide-dock_SP'):
 
     return df
 
-def visualize_glide_docking_monitor(df):
-    plt.figure(figsize=(8, 6))
+
+def visualize_glide_docking_monitor(df, **kwargs):
+    plt.figure(figsize=kwargs.get('figsize'))
     sns.barplot(data=df, y='job', x='completed_fraction', color='skyblue', label='Completed')
     sns.barplot(data=df, y='job', x='running_fraction', left=df['completed_fraction'], color ='salmon',label='Running')
 
-    plt.xlabel("Complete Status")
-    plt.ylabel("Jobs")
-    plt.title('Glide Docking Job Monitor')
+    plt.xlabel(kwargs.get('xlabel'))
+    plt.ylabel(kwargs.get('ylabel'))
+    plt.title(kwargs.get('title'))
     plt.legend()
     plt.tight_layout()
     plt.show()
