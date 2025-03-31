@@ -48,13 +48,6 @@ class Faithfulness_Analyzer(Data_Preprocessor):
 
 
     def manual_control(self):
-        '''Perform manual drop of each atom in each molecule to find the one that most influences the prediction
-        
-        Returns:
-        ----------
-        rmse (numpy array): an array of rmse compared to the inital prediction at each drop round.
-        '''
-        
         self.num_compound = self.data_frame.shape[0]
         
         # Initialized container for predictions of drops atoms
@@ -78,30 +71,28 @@ class Faithfulness_Analyzer(Data_Preprocessor):
             initial_prediction = self.model(bmg_compound).detach().cpu().numpy().reshape(-1)
             drop_predictions['drop_0'].append(initial_prediction.item())
 
-            # Try dropping each atom in the molecule
-            important_atom_index = []
-            for drop_time in range(1,self.num_drop):
-                init_rmse = -5000
-                for atom in range(bmg_compound.V.shape[0]):
-                    if atom in important_atom_index:
-                        continue
-                    bmg_modified = copy.deepcopy(bmg_compound)
-                    bmg_modified.V[atom] = 0
-                    bmg_modified.V[important_atom_index] = 0
-
-                    drop_prediction = self.model(bmg_modified).detach().cpu().numpy().reshape(-1)
-                    rmse_drop_atom = root_mean_squared_error(initial_prediction,drop_prediction)
-                    if rmse_drop_atom > init_rmse:
-                        init_rmse = rmse_drop_atom
-                        selected_atom = atom
-                
-                # Store the important atoms
-                important_atom_index.append(selected_atom)
+            # Try dropping each atom in the molecule and record prediction change (delta)
+            atom_index = []
+            atom_delta = []
+            for atom in range(bmg_compound.V.shape[0]):
+                # Drop and generate prediction
                 bmg_modified = copy.deepcopy(bmg_compound)
-                bmg_modified.V[selected_atom] = 0
-                bmg_modified.V[important_atom_index] = 0
-                drop_prediction = self.model(bmg_modified).detach().numpy().reshape(-1)
-                drop_predictions['drop_'+str(drop_time)].append(drop_prediction.item())
+                bmg_modified.V[atom] = 0
+                drop_prediction = self.model(bmg_modified).detach().cpu().numpy().reshape(-1)
+                # Record atom index and prediction change
+                atom_index.append(atom)
+                atom_delta.append(root_mean_squared_error(initial_prediction,drop_prediction))
+                # Sort
+                sorted_atom_delta, sorted_atom_index = zip(*sorted(zip(atom_delta,atom_index),reverse=True))
+                sorted_atom_delta = list(sorted_atom_delta)
+                sorted_atom_index = list(sorted_atom_index)
+
+            # Generate dropped prediction
+            for drop_time in range(1,self.num_drop):
+                important_index = sorted_atom_index[:drop_time]
+                bmg_modified.V[important_index] = 0
+                drop_prediction = self.model(bmg_modified).detach().cpu().numpy().reshape(-1)
+                drop_predictions['drop_'+str(drop_time)].append(drop_prediction)
 
         # Calculate rmse at each drop_time compare to drop_0
         rmse = [0]
@@ -109,10 +100,10 @@ class Faithfulness_Analyzer(Data_Preprocessor):
             rmse.append(root_mean_squared_error(drop_predictions['drop_0'],drop_predictions['drop_'+str(drop_time)]))
         
         rmse = np.array(rmse)
-
-        # Save this one for saving time
+        # Append to self for later calculation
         self.rmse_manual = rmse
         return rmse
+
         
 
     def shuffle_bmg(self):
