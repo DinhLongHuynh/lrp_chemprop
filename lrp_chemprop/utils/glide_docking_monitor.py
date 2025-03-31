@@ -21,16 +21,19 @@ def glide_docking_monitor(job_list, job_name = 'glide-dock_SP'):
         directory_name = job_name + '_' +str(job)
         file_name = job_name + '_' + str(job) +'.log'
         
-        with open(directory_name+'/'+file_name, 'r') as f: 
-            for i, line in enumerate(f.readlines()):
-                if line.startswith('Number of jobs:'):
-                    total_jobs = int(line.split()[3])
-        
-            completed_jobs = int(line.split()[0])
+        try:
+            with open(directory_name+'/'+file_name, 'r') as f: 
+                for i, line in enumerate(f.readlines()):
+                    if line.startswith('Number of jobs:'):
+                        total_jobs = int(line.split()[3])
             
-        df['job'].append(directory_name)
-        df['completed'].append(completed_jobs)
-        df['total'].append(total_jobs)
+                completed_jobs = int(line.split()[0])
+                
+            df['job'].append(directory_name)
+            df['completed'].append(completed_jobs)
+            df['total'].append(total_jobs)
+        except:
+            print(f'{job_name}_{job} done')
 
     df = pd.DataFrame(df)
     df['completed_fraction'] = df['completed']/df['total']
