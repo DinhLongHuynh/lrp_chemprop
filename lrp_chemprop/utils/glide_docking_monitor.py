@@ -33,7 +33,10 @@ def glide_docking_monitor(job_list, job_name = 'glide-dock_SP'):
             df['completed'].append(completed_jobs)
             df['total'].append(total_jobs)
         except:
-            print(f'{job_name}_{job} done')
+            print(f'{job_name}_{job}: done')
+            df['job'].append(directory_name)
+            df['completed'].append(total_jobs)
+            df['total'].append(total_jobs)
 
     df = pd.DataFrame(df)
     df['completed_fraction'] = df['completed']/df['total']
