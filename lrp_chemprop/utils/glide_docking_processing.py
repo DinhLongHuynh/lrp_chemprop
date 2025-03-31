@@ -1,9 +1,9 @@
 import os
 import pandas as pd
 
-
 folder_name = 'glide-dock_SP_'
-job_list = [2,3,4,9]
+job_list = input('Insert Job List:')
+job_list = job_list.split(", ")
 
 def glide_result(folder_name=folder_name,job_list=job_list):
     for job in job_list:
