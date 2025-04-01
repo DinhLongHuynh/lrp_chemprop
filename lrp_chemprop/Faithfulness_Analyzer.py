@@ -238,10 +238,11 @@ class Faithfulness_Analyzer(Data_Preprocessor):
             drop_prediction = self.model(bmg_lrp_modified).detach().numpy().reshape(-1)
             rmse.append(root_mean_squared_error(initial_prediction,drop_prediction))
 
+        self.rmse_lrp = rmse
         return rmse
 
     
-    def analyzer(self,alpha_1,epsilon,alpha_2,seed=0):
+    def analyzer(self,seed=0):
         '''Perform forward pass of Faithfulness Test, calculate all manual, lrp, and random scenarios.
 
         Parameters: 
@@ -260,11 +261,11 @@ class Faithfulness_Analyzer(Data_Preprocessor):
         
         rmse_random = self.random_control(seed=seed)
         rmse_manual = self.rmse_manual
-        rmse_lrp = self.lrp_drop(alpha_1=alpha_1,epsilon=epsilon,alpha_2=alpha_2)
+        rmse_lrp = self.rmse_lrp
 
         return rmse_manual, rmse_lrp, rmse_random
     
-    def faithfulness(self,alpha_1,epsilon,alpha_2,seed=0):
+    def faithfulness(self,seed=0):
         '''Calculate faithfulness score.
         
         Parameters: 
@@ -279,7 +280,7 @@ class Faithfulness_Analyzer(Data_Preprocessor):
         faithfulness (float): faithfulness score
         '''
         
-        rmse_manual, rmse_lrp, rmse_random = self.analyzer(alpha_1,epsilon,alpha_2,seed=seed)
+        rmse_manual, rmse_lrp, rmse_random = self.analyzer(seed=seed)
 
         faithfulness = (np.trapezoid(y=rmse_lrp,x=range(0,self.num_drop))-np.trapezoid(y=rmse_random,x=range(0,self.num_drop)))/(np.trapezoid(y=rmse_manual,x=range(0,self.num_drop))-np.trapezoid(y=rmse_random,x=range(0,self.num_drop)))
         return faithfulness
