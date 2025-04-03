@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 
-
 folder_name = 'glide-dock_SP_'
 job_list = input('Insert Job List:')
 job_list = job_list.split(", ")
@@ -18,9 +17,7 @@ def glide_result(folder_name=folder_name,job_list=job_list):
 
         df_unique.to_csv(folder_name+str(job)+'_processed.csv', index=False)
         
-
     return df_unique
-
 
 if __name__ == "__main__":
     glide_result()
