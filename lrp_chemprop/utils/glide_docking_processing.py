@@ -5,7 +5,7 @@ folder_name = 'glide-dock_SP_'
 job_list = input('Insert Job List:')
 job_list = job_list.split(", ")
 
-def glide_result(folder_name=folder_name,job_list=job_list):
+def glide_result(folder_name, job_list):
     for job in job_list:
         file_name = folder_name+str(job)+'/'+folder_name+str(job)+'.csv'
         df = pd.read_csv(file_name)
@@ -20,4 +20,4 @@ def glide_result(folder_name=folder_name,job_list=job_list):
     return df_unique
 
 if __name__ == "__main__":
-    glide_result()
+    glide_result(folder_name=folder_name,job_list=job_list)
