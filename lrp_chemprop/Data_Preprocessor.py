@@ -5,6 +5,7 @@ from chemprop import data
 import rdkit
 from rdkit import Chem
 from chemprop import data, featurizers
+from chemprop.featurizers.molecule import MorganBinaryFeaturizer
 
 
 
@@ -55,9 +56,38 @@ class Data_Preprocessor:
             return valence <= 3 
         else: 
             return valence <= 2  
+        
+
+    def get_mol_HBD_HBA(self,mols):
+        '''A function to generate HBD_HBA properties for molecules
+        
+        Parameters:
+        ---------
+        mols (list): list of RDKit mol objects.
+        
+        Returns:
+        ----------
+        mol_HBs (list): list of array that contain HBD-HBA descriptor for molecules, shape of each array is (n_atom, 2)  '''
+        mol_HBs = []
+        for mol in mols:
+            mol_HB = [[],[]]
+            for atom in mol.GetAtoms():
+                if self.is_hbd(atom):
+                    mol_HB[0].append(1)
+                else:
+                    mol_HB[0].append(0)
+                    
+                if self.is_hba(atom):
+                    mol_HB[1].append(1)
+                else:
+                    mol_HB[1].append(0)
+            mol_HB = np.array(mol_HB).T
+            mol_HBs.append(mol_HB)
+        return mol_HBs
+
     
 
-    def dataset_generator_no_HBD_HBA(self):
+    def dataset_generator(self):
         '''Prepare chemprop dataset without additional HBD/HBA feature.
     
         Returns:
@@ -65,57 +95,33 @@ class Data_Preprocessor:
         dataset (Chemprop dataset): Chemprop dataset.
         '''
         
-        def datapoint_generator(df,smiles,y,addH):
-            smis = df.loc[:,smiles].values
-            ys = df.loc[:,[y]].values
-            datapoints = [data.MoleculeDatapoint.from_smi(smi,y,add_h=addH) for smi,y in zip(smis,ys)]
-
-            return datapoints
-
-        datapoints = datapoint_generator(df=self.df,smiles=self.smiles_column,y=self.target_column,addH=self.addH)
-        dataset = data.MoleculeDataset(datapoints, featurizer=self.featurizer)
-        return dataset
-    
-
-    def dataset_generator_HBD_HBA(self):
-        '''Prepare chemprop dataset with additional HBD/HBA feature.
-    
-        Returns:
-        ----------
-        dataset (Chemprop dataset): Chemprop dataset.
-        '''
-        
-        def datapoint_generator(df,smiles,y,addH):
+        morgan_fp = MorganBinaryFeaturizer()
+        def datapoint_generator(df,smiles,y,addH,HB,morgan):
             smis = df.loc[:,smiles].values
             ys = df.loc[:,[y]].values
             mols = [Chem.MolFromSmiles(smi) for smi in smis]
 
-            mol_HBs = []
-            for mol in mols:
-                mol_HB = [[],[]]
-                for atom in mol.GetAtoms():
-                    if self.is_hbd(atom):
-                        mol_HB[0].append(1)
-                    else:
-                        mol_HB[0].append(0)
-                    
-                    if self.is_hba(atom):
-                        mol_HB[1].append(1)
-                    else:
-                        mol_HB[1].append(0)
-                mol_HB = np.array(mol_HB).T
-                mol_HBs.append(mol_HB)
+            if HB:
+                mol_HBs = self.get_mol_HBD_HBA(mols)
+            else:
+                mol_HBs = [None]*len(smis)
 
-            datapoints = [data.MoleculeDatapoint.from_smi(smi,y,add_h=addH,V_f=mol_HB) for smi,y,mol_HB in zip(smis,ys,mol_HBs)]
-
+            if morgan:
+                x_ds = [morgan_fp(mol) for mol in mols]
+            else:
+                x_ds = [None]*len(smis)
+            
+            datapoints = [data.MoleculeDatapoint.from_smi(smi,y,add_h=addH, V_f = mol_HB, x_d = x_d) for smi, y, mol_HB, x_d in zip(smis,ys,mol_HBs,x_ds)]
             return datapoints
 
-        datapoints = datapoint_generator(df=self.df,smiles=self.smiles_column,y=self.target_column,addH=self.addH)
+        datapoints = datapoint_generator(df=self.df,smiles=self.smiles_column,y=self.target_column,addH=self.addH,HB=self.HB,morgan=self.morgan)
         dataset = data.MoleculeDataset(datapoints, featurizer=self.featurizer)
         return dataset
     
 
-    def generate(self, df, smiles_column = 'smiles', target_column='docking_score', addH=False, HB = False,
+    
+
+    def generate(self, df, smiles_column = 'smiles', target_column='docking_score', addH=False, HB = False, morgan = False,
                  featurizer = featurizers.SimpleMoleculeMolGraphFeaturizer()):
         '''Generate chemprop dataset according to a given configuration
 
@@ -126,6 +132,7 @@ class Data_Preprocessor:
         target_column (str): a string that indicates the target column (i.e. docking_scores, solubility) in the data frame.
         addH (boolean): to incorporate explicit hydrogen atoms into a molecular graph.
         HB (boolean): to incorporate additional HBD/HBA features for each atom in BatchMolGraph.
+        morgan (boolean): to incorporate morgan binaray fingerprint for each molecules
         featurizer (Chemprop Featurizer): a Featurizer from Chemprop to encode features for atoms, bonds, and molecules.
     
         Returns:
@@ -139,9 +146,7 @@ class Data_Preprocessor:
         self.addH = addH
         self.HB = HB
         self.featurizer = featurizer
+        self.morgan = morgan
         
-        if self.HB:
-            return self.dataset_generator_HBD_HBA()
-        
-        else: 
-            return self.dataset_generator_no_HBD_HBA()
+
+        return self.dataset_generator()
