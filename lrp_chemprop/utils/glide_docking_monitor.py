@@ -3,11 +3,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-
 def glide_finished(job_list, job_name = 'glide-dock_SP'):
     '''A function to recognise finished job using .log file
      
@@ -28,7 +23,8 @@ def glide_finished(job_list, job_name = 'glide-dock_SP'):
         with open(directory_name + '/' + file_name, 'r') as f:
             lines = f.readlines()
             for line in lines:
-                if 'Total elapsed time' in line:
+                lower_line = line.lower()
+                if 'total elapsed time' in lower_line:
                     finished_jobs.append(directory_name + '/' + file_name)
     return finished_jobs
 
@@ -52,32 +48,32 @@ def glide_docking_monitor(job_list, job_name = 'glide-dock_SP'):
     for job in job_list: 
         directory_name = job_name + '_' +str(job)
         file_name = job_name + '_' + str(job) +'.log'
+        with open(directory_name+'/'+file_name, 'r') as f: 
+                for line in f.readlines():
+                    if line.startswith('Number of jobs:'):
+                        total_jobs = int(line.split()[3])
         
         if directory_name+'/'+file_name in finished_jobs:
             print(f'{job_name}_{job}: finished')
             df['job'].append(directory_name)
             df['completed'].append(total_jobs)
             df['total'].append(total_jobs)
-                
+                    
         else:
             with open(directory_name+'/'+file_name, 'r') as f: 
-                for i, line in enumerate(f.readlines()):
-                    if line.startswith('Number of jobs:'):
-                        total_jobs = int(line.split()[3])
-                
-                completed_jobs = int(line.split()[0])
-                df['job'].append(directory_name)
-                df['completed'].append(completed_jobs)
-                df['total'].append(total_jobs)
+                for line in f.readlines():
+                    completed_jobs = int(line.split()[0])
                     
-                
+            df['job'].append(directory_name)
+            df['completed'].append(completed_jobs)
+            df['total'].append(total_jobs)
 
     df = pd.DataFrame(df)
     df['completed_fraction'] = df['completed']/df['total']
     df['running_fraction'] = 1.0 - df['completed_fraction']
 
     return df
-    
+
 
 def visualize_glide_docking_monitor(df, **kwargs):
     plt.figure(figsize=(8, 6))
