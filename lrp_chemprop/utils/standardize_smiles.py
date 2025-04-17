@@ -3,7 +3,7 @@ from rdkit import Chem
 from tqdm import tqdm
 
 tqdm.pandas()
-def standardize_smiles(smiles,desalt=True,remove_stereo=True):
+def standardize_smiles(smiles,desalt,remove_stereo):
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return None
@@ -22,7 +22,7 @@ def standardize_smiles(smiles,desalt=True,remove_stereo=True):
         return mol 
 
 
-def standardize_smiles_df(df,smile_columns = 'smiles'):
-    df['smiles_standard'] = df[smile_columns].progress_apply(standardize_smiles)
+def standardize_smiles_df(df,smile_columns = 'smiles',desalt=True,remove_stereo=True):
+    df['smiles_standard'] = df[smile_columns].progress_apply(lambda smiles: standardize_smiles(smiles,desalt=desalt,remove_stereo=remove_stereo))
     return df
 
