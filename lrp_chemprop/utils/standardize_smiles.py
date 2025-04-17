@@ -3,18 +3,17 @@ from rdkit import Chem
 from tqdm import tqdm
 
 tqdm.pandas()
-def standardize_smiles(smiles):
-    """
-    Basic standardization for SMILES without using rdMolStandardize.
-    Steps: 1. Desalt (keep largest fragment), 2. Remove stereochemistry,
-           3. Sanitize, 4. Canonicalize
-    """
+def standardize_smiles(smiles,desalt=True,remove_stereo=True):
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return None
     try:
-        frags = Chem.GetMolFrags(mol, asMols=True)
-        mol = max(frags, key=lambda m: m.GetNumAtoms())
+        if desalt:
+            frags = Chem.GetMolFrags(mol, asMols=True)
+            mol = max(frags, key=lambda m: m.GetNumAtoms())
+        if remove_stereo:
+            Chem.RemoveStereochemistry(mol)
+        
         Chem.SanitizeMol(mol)
         return Chem.MolToSmiles(mol, canonical=True)
     
