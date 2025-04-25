@@ -9,7 +9,7 @@ class IterableMolDatapoints(IterableDataset):
     The output is a generator that yields one chemprop.data.datasets.Datum at a time.
     '''
 
-    def __init__(self, df, smiles_column, target_column, weight_column, scaler = None, size_at_time=100, shuffle=True):
+    def __init__(self, df, smiles_column, target_column, weight_column=None, scaler = None, size_at_time=100, shuffle=True, HB=False, morgan = False):
         '''Parameters:
         ----------
         df (pd.DataFrame): A pandas dataframe containing the data.
@@ -27,6 +27,8 @@ class IterableMolDatapoints(IterableDataset):
         self.size_at_time = size_at_time
         self.shuffle= shuffle
         self.scaler = scaler
+        self.HB = HB
+        self.morgan = morgan
 
     def __len__(self):
         return len(self.df)
@@ -45,7 +47,7 @@ class IterableMolDatapoints(IterableDataset):
         for i in range(0, len(df_shuffled), self.size_at_time):
             df_at_time = df_shuffled.iloc[i:i + self.size_at_time]
             data_generator = Data_Preprocessor()
-            df_process = data_generator.generate(df=df_at_time,smiles_column=self.smiles_column,target_column=self.target_column,HB=True,weight_column='weight_lowscores')
+            df_process = data_generator.generate(df=df_at_time,smiles_column=self.smiles_column,target_column=self.target_column, HB=self.HB, weight_column=self.weight_column, morgan=self.morgan)
 
             if self.scaler != None: 
                 df_process.normalize_targets(scaler = self.scaler)

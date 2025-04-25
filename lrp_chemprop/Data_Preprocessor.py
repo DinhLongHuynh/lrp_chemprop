@@ -96,10 +96,13 @@ class Data_Preprocessor:
         '''
         
         morgan_fp = MorganBinaryFeaturizer()
-        def datapoint_generator(df,smiles,y,addH,HB,morgan):
+        def datapoint_generator(df,smiles,y,addH,HB,morgan,weight):
             smis = df.loc[:,smiles].values
             ys = df.loc[:,[y]].values
             mols = [Chem.MolFromSmiles(smi) for smi in smis]
+
+            if weight!= None:
+                weights = df.loc[:,weight].values
 
             if HB:
                 mol_HBs = self.get_mol_HBD_HBA(mols)
@@ -111,17 +114,17 @@ class Data_Preprocessor:
             else:
                 x_ds = [None]*len(smis)
             
-            datapoints = [data.MoleculeDatapoint.from_smi(smi,y,add_h=addH, V_f = mol_HB, x_d = x_d) for smi, y, mol_HB, x_d in zip(smis,ys,mol_HBs,x_ds)]
+            datapoints = [data.MoleculeDatapoint.from_smi(smi,y,add_h=addH, V_f = mol_HB, x_d = x_d, weight=weight) for smi, y, mol_HB, x_d, weight in zip(smis,ys,mol_HBs,x_ds, weights)]
             return datapoints
 
-        datapoints = datapoint_generator(df=self.df,smiles=self.smiles_column,y=self.target_column,addH=self.addH,HB=self.HB,morgan=self.morgan)
+        datapoints = datapoint_generator(df=self.df,smiles=self.smiles_column,y=self.target_column,addH=self.addH,HB=self.HB,morgan=self.morgan,weight=self.weight_column)
         dataset = data.MoleculeDataset(datapoints, featurizer=self.featurizer)
         return dataset
     
 
     
 
-    def generate(self, df, smiles_column = 'smiles', target_column='docking_score', addH=False, HB = False, morgan = False,
+    def generate(self, df, smiles_column = 'smiles', target_column='docking_score', addH=False, HB = False, morgan = False, weight_column =None,
                  featurizer = featurizers.SimpleMoleculeMolGraphFeaturizer()):
         '''Generate chemprop dataset according to a given configuration
 
@@ -147,6 +150,8 @@ class Data_Preprocessor:
         self.HB = HB
         self.featurizer = featurizer
         self.morgan = morgan
+        self.weight_column = weight_column
         
 
         return self.dataset_generator()
+    
