@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 from Data_Preprocessor import Data_Preprocessor
 
 class IterableMolDatapoints(IterableDataset):
-    '''A class to prepare data for streaming, which is a subclass of IterableDataset. 
+    '''A class to prepare IterableDataset. 
     The output is a generator that yields one chemprop.data.datasets.Datum at a time.
     '''
 
