@@ -134,8 +134,8 @@ class LRP_Rules:
         num_atoms, d_h = activation_j.shape
 
         # Create sparse mask: [num_compounds, num_atoms]
-        indices = torch.stack([batch_index, torch.arange(num_atoms, device=batch_index.device)])
-        values = torch.ones(num_atoms, device=batch_index.device)
+        indices = torch.stack([batch_index, torch.arange(num_atoms)])
+        values = torch.ones(num_atoms)
         mask = torch.sparse_coo_tensor(indices, values, (num_compounds, num_atoms))
 
         # Compute weights based on aggregation function
