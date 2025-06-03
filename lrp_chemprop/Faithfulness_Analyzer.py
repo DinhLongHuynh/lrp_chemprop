@@ -55,9 +55,8 @@ class Faithfulness_Analyzer(Data_Preprocessor):
         for drop_time in range(self.num_drop):
             drop_predictions['drop_'+str(drop_time)] = []
         
-        # Investigate each atom in each compound
+        # Loop through each atom in each compound
         for compound in range(self.num_compound):
-            # Extract bmg_compound
             df_compound = self.data_frame.iloc[[compound]]
             dataset_compound = self.generate(df=df_compound,
                                              smiles_column = self.smiles_column,
@@ -67,7 +66,7 @@ class Faithfulness_Analyzer(Data_Preprocessor):
             dataloader_compound = data.build_dataloader(dataset_compound,batch_size=df_compound.shape[0],shuffle=False)
             bmg_compound, V_d, X_d, Y, *_ = next(iter(dataloader_compound))
 
-            # Extract drop_0 a.k.a. initial prediction
+            # Extract drop_0, aka initial prediction
             initial_prediction = self.model(bmg_compound).detach().cpu().numpy().reshape(-1)
             drop_predictions['drop_0'].append(initial_prediction.item())
 
@@ -131,12 +130,11 @@ class Faithfulness_Analyzer(Data_Preprocessor):
                 available_values = tensor[mask] 
                 remaining_values = available_values[~torch.isin(available_values, torch.tensor(chosen_per_index[idx.item()]))]
 
-                if remaining_values.shape[0] > 0:  # Ensure values are left for selection
-                    selected = remaining_values[torch.randperm(len(remaining_values))[0]]  # Select one random value
+                if remaining_values.shape[0] > 0: 
+                    selected = remaining_values[torch.randperm(len(remaining_values))[0]] 
                     chosen_per_index[idx.item()].append(selected.item())  
                     round_selected.append(selected)
 
-            # Concatenate the round selection with previous selections
             if round_selected:
                 selected_values = torch.cat([selected_values, torch.tensor(round_selected,dtype=torch.int64)])
 
@@ -207,9 +205,9 @@ class Faithfulness_Analyzer(Data_Preprocessor):
 
         #Initial prediction
         initial_prediction = self.model(self.bmg).detach().cpu().numpy().reshape(-1)
+        
         #Initialized containers 
         rmse = [0]
-
 
         #Determine top important atoms
         important_indices = {}
