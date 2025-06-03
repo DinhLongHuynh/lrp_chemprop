@@ -137,30 +137,16 @@ class LRP_Rules:
         indices = torch.stack([batch_index, torch.arange(num_atoms)])
         values = torch.ones(num_atoms)
         mask = torch.sparse_coo_tensor(indices, values, (num_compounds, num_atoms))
-
-        # Compute weights based on aggregation function
-        if agg_func == 'sum':
-            weights = mask.to_dense()
-        elif agg_func == 'mean':
-            atom_counts = torch.sparse.sum(mask, dim=1).to_dense().clamp(min=1)
-            weights = mask.to_dense() / atom_counts.unsqueeze(1)
-
+        weights = mask.to_dense()
 
         # Aggregate activations with adjusted weights
         adj_weights_sparse = mask * weights
-        z_k = torch.sparse.mm(adj_weights_sparse, activation_j)  # [num_compounds, d_h]
 
-        # Stabilize z_k to avoid division by zero
+        z_k = torch.sparse.mm(adj_weights_sparse, activation_j)  # [num_compounds, d_h]
         z_k = z_k + torch.where(z_k >= 0, torch.finfo(z_k.dtype).tiny, -torch.finfo(z_k.dtype).tiny) + torch.where(
             z_k >= 0, epsilon, -epsilon)
-
-        # Compute scaling factor s_k = relevance_k / z_k
         s_k = relevance_k / z_k
-
-        # Distribute relevance back to atoms
-        relevance_atoms = adj_weights_sparse.transpose(0, 1).mm(s_k)  # [num_atoms, d_h]
-
-        # Element-wise multiply with original activations
+        relevance_atoms = adj_weights_sparse.transpose(0, 1).mm(s_k)  
         relevance_j = relevance_atoms * activation_j
 
         return relevance_j
